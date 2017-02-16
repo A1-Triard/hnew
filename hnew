@@ -13,21 +13,25 @@ error() {
     echo 'Try `hnew'"'"' --help for more information.' >&2
 }
 
+no_dup() {
+    if [ -n "$1" ]; then
+        echo "Duplicated option: -$2" >&2
+        error
+        exit 1
+    fi
+}
+
 github_url=''
 descr=''
 
-while getopts ":hg:" opt; do
+while getopts ":hgd:" opt; do
     case $opt in
     h)
         help
         exit 0
         ;;
     g)
-        if [ -n "$github_url" ]; then
-            echo "Duplicated option: -g" >&2
-            error
-            exit 1
-        fi
+        no_dup "$github_url" g || exit 1
         github_url="$OPTARG"
         if [ -z "$github_url" ]; then
             echo "Empty URL" >&2
@@ -38,6 +42,7 @@ while getopts ":hg:" opt; do
         shift
         ;;
     d)
+        no_dup "$descr" d || exit 1
         descr="$OPTARG"
         shift
         shift
