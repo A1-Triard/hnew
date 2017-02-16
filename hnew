@@ -24,7 +24,7 @@ no_dup() {
 github_url=''
 descr=''
 
-while getopts ":hgd:" opt; do
+while getopts ":hg:d:" opt; do
     case $opt in
     h)
         help
