@@ -225,7 +225,23 @@ awk -v LP="$lib_params" -v EP="$exe_params" '
                 print EP
             }
         } else {
-            print $0
+            print
         }
-    }' "$project_name.cabal" > tmp
+    }
+    ' "$project_name.cabal" > tmp
+mv -f tmp "$project_name.cabal"
+
+awk '
+    {
+        if(match($0, "^ *, ")) {
+            sub("^ *", "")
+            for(i = 0; i < colon_column - 1; ++i)
+                $0 = " " $0
+        } else {
+            sub(":  +", ": ")
+            colon_column = index($0, ":")
+        }
+        print
+    }
+    ' "$project_name.cabal" > tmp
 mv -f tmp "$project_name.cabal"
