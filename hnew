@@ -146,7 +146,7 @@ sed -i "s/version:             0.1.0.0/version:             0.1/" "$project_name
 
 if [ -n "$github_url" ]; then
     github_project="$(dirname "$github_url")/$(basename "$github_url" .git)"
-    sed -i "s/https://github.com/A1-Triard/$project_name/$github_project/g" "$project_name.cabal"
+    sed -i "s|https://github.com/A1-Triard/$project_name|$github_project|g" "$project_name.cabal"
 fi
 
 if [ -n "$descr" ]; then
