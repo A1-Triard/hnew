@@ -1,0 +1,226 @@
+#!/bin/sh
+
+help() {
+    echo "Usage: hnew [OPTION]... PROJECT_NAME APP_NAME"
+    echo "Create new haskell project."
+    echo ""
+    echo "  -h          display this help and exit"
+    echo "  -d DESCR    description"
+    echo "  -g URL.git  attach to github project"
+}
+
+error() {
+    echo 'Try `hnew'"'"' --help for more information.' >&2
+}
+
+github_url=''
+descr=''
+
+while getopts ":hg:" opt; do
+    case $opt in
+    h)
+        help
+        exit 0
+        ;;
+    g)
+        if [ -n "$github_url" ]; then
+            echo "Duplicated option: -g" >&2
+            error
+            exit 1
+        fi
+        github_url="$OPTARG"
+        if [ -z "$github_url" ]; then
+            echo "Empty URL" >&2
+            error
+            exit 1
+        fi
+        shift
+        shift
+        ;;
+    d)
+        descr="$OPTARG"
+        shift
+        shift
+        ;;
+    \?)
+        echo "Invalid option: -$OPTARG" >&2
+        error
+        exit 1
+        ;;
+    esac
+done
+
+project_name="$1"
+app_name="$2"
+
+if [ -z "$project_name" ];then
+    echo "Empty project name" >&2
+    error
+    exit 1
+fi
+
+if [ -z "$app_name" ];then
+    echo "Empty application name" >&2
+    error
+    exit 1
+fi
+
+if [ -e "$project_name" ]; then
+    echo "Directory exists: $project_name" >&2
+    exit 1
+fi
+
+echo "GitHub repository: $github_url"
+echo "Project name: $project_name"
+echo "Application name: $app_name"
+echo "Decsription: $descr"
+echo ""
+while true; do
+    read -p "Continue? " yn
+    case $yn in
+        [Yy]*) break;;
+        [Nn]*) exit;;
+        *) echo "Please answer yes or no.";;
+    esac
+done
+
+tempdir=$(mktemp -d hnew.XXXXXX)
+if [ -n "$github_url" ]; then
+    git clone "$github_url" $tempdir || (rm -rf $tempdir ; exit 2)
+fi
+
+stack new "$project_name" \
+    -p author-email:internalmike@gmail.com \
+    -p author-name:Warlock \
+    -p github-username:A1-Triard \
+    -p category:Web \
+    -p copyriht:"$(date +%Y) Warlock" \
+    || (rm -rf $tempdir ; exit 2)
+if [ -n "$github_url" ]; then
+    mv $tempdir/.git "$project_name"
+fi
+rm -rf $tempdir
+cd "$project_name"
+cat > .gitignore << "EOF"
+*.test
+*.lkshs
+dist
+cabal-dev
+*.o
+*.hi
+*.chi
+*.chs.h
+*.dyn_o
+*.dyn_hi
+.hpc
+.hsenv
+.cabal-sandbox/
+cabal.sandbox.config
+*.prof
+*.aux
+*.hp
+.stack-work/
+EOF
+
+if [ -z "$github_url" ]; then
+    git init || exit 2
+fi
+git add . || exit 2
+git commit -m "Initial commit" || exit 2
+git submodule add https://github.com/A1-Triard/haskell_include.git include || exit 2
+git commit -m "include" || exit 2
+
+cp -f include/LICENSE . || exit 2
+git add LICENSE || exit 2
+git commit -m "LICENSE" || exit 2
+
+sed -i "s/$project_name-exe/$app_name/g" "$project_name.cabal"
+sed -i "s/license:             BSD3/license:             Apache/" "$project_name.cabal"
+sed -i "s/extra-source-files:  README.md/-- extra-source-files:/" "$project_name.cabal"
+sed -i "s/version:             0.1.0.0/version:             0.1/" "$project_name.cabal"
+
+if [ -n "$github_url" ]; then
+    github_project="$(dirname "$github_url")/$(basename "$github_url" .git)"
+    sed -i "s/https://github.com/A1-Triard/$project_name/$github_project/g" "$project_name.cabal"
+fi
+
+if [ -n "$descr" ]; then
+    sed -i "s/-- synopsis:/synopsis: $descr/" "$project_name.cabal"
+    sed -i "s/-- description:/description: $descr/" "$project_name.cabal"
+fi
+
+cat > extensions << "EOF"
+  default-extensions: CPP
+                    , TemplateHaskell
+                    , ViewPatterns
+                    , MultiParamTypeClasses
+                    , DeriveDataTypeable
+                    , DeriveGeneric
+                    , DeriveFoldable
+                    , DeriveTraversable
+                    , StandaloneDeriving
+                    , UnicodeSyntax
+                    , MagicHash
+                    , DefaultSignatures
+                    , NegativeLiterals
+                    , PatternSynonyms
+                    , ParallelListComp
+                    , TransformListComp
+                    , MonadComprehensions
+                    , UnboxedTuples
+                    , LambdaCase
+                    , EmptyCase
+                    , EmptyDataDecls
+                    , MultiWayIf
+                    , TypeOperators
+                    , TypeFamilies
+                    , KindSignatures
+                    , LiberalTypeSynonyms
+                    , ExistentialQuantification
+                    , GADTs
+                    , DeriveAnyClass
+                    , FlexibleContexts
+                    , FlexibleInstances
+                    , OverloadedStrings
+                    , DataKinds
+                    , ExplicitForAll
+                    , BangPatterns
+EOF
+
+cat > include_dirs << "EOF"
+  include-dirs: include
+EOF
+
+cat > lib_options << "EOF"
+  ghc-options: -fmax-pmcheck-iterations=10000000 -O2 -Wall -Werror -fno-warn-unused-imports
+EOF
+
+cat > exe_options << "EOF"
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N -fmax-pmcheck-iterations=10000000 -O2 -Wall -Werror -fno-warn-unused-imports
+EOF
+
+cat > language << "EOF"
+  default-language: Haskell2010
+EOF
+
+lib_params=$(cat extensions include_dirs lib_options language)
+exe_params=$(cat extensions include_dirs exe_options language)
+
+rm -f extensions include_dirs lib_options exe_options language
+
+awk -v LP="$lib_params" -v EP="$exe_params" '
+    BEGIN {
+        first = 1
+    } {
+        if($0 == "  default-language:    Haskell2010") {
+            if(first) {
+                first = 0
+                print LP
+            } else {
+                print EP
+            }
+        } else {
+            print $0
+        }
+    }' "$project_name.cabal" > tmp
+mv -f tmp "$project_name.cabal"
