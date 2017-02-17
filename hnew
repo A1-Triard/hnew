@@ -194,11 +194,11 @@ cat > include_dirs << "EOF"
 EOF
 
 cat > lib_options << "EOF"
-  ghc-options: -fmax-pmcheck-iterations=10000000 -O2 -Wall -Werror -fno-warn-unused-imports
+  ghc-options: -fmax-pmcheck-iterations=10000000 -O2 -Wall -Werror -fno-warn-unused-imports -fprint-potential-instances
 EOF
 
 cat > exe_options << "EOF"
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N -fmax-pmcheck-iterations=10000000 -O2 -Wall -Werror -fno-warn-unused-imports
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N -fmax-pmcheck-iterations=10000000 -O2 -Wall -Werror -fno-warn-unused-imports -fprint-potential-instances
 EOF
 
 cat > language << "EOF"
