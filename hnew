@@ -131,13 +131,10 @@ if [ -z "$github_url" ]; then
     git init || exit 2
 fi
 git add . || exit 2
-git commit -m "Initial commit" || exit 2
 git submodule add https://github.com/A1-Triard/haskell_include.git include || exit 2
-git commit -m "include" || exit 2
 
 cp -f include/LICENSE . || exit 2
 git add LICENSE || exit 2
-git commit -m "LICENSE" || exit 2
 
 sed -i "s/$project_name-exe/$app_name/g" "$project_name.cabal"
 sed -i "s/license:             BSD3/license:             Apache/" "$project_name.cabal"
@@ -245,3 +242,6 @@ awk '
     }
     ' "$project_name.cabal" > tmp
 mv -f tmp "$project_name.cabal"
+
+git add . || exit 2
+git commit -m "Empty project" || exit 2
