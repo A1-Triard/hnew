@@ -187,6 +187,8 @@ cat > extensions << "EOF"
                     , DataKinds
                     , ExplicitForAll
                     , BangPatterns
+                    , ScopedTypeVariables
+                    , RankNTypes
 EOF
 
 cat > include_dirs << "EOF"
