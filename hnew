@@ -7,6 +7,7 @@ help() {
     echo "  -h          display this help and exit"
     echo "  -d DESCR    description"
     echo "  -g URL.git  attach to github project"
+    echo "  -f          do NOT format cabal file"
 }
 
 error() {
@@ -23,12 +24,17 @@ no_dup() {
 
 github_url=''
 descr=''
+format_cabal=1
 
-while getopts ":hg:d:" opt; do
+while getopts ":hg:d:f" opt; do
     case $opt in
     h)
         help
         exit 0
+        ;;
+    f)
+        format_cabal=''
+        shift
         ;;
     g)
         no_dup "$github_url" g || exit 1
@@ -58,13 +64,13 @@ done
 project_name="$1"
 app_name="$2"
 
-if [ -z "$project_name" ];then
+if [ -z "$project_name" ]; then
     echo "Empty project name" >&2
     error
     exit 1
 fi
 
-if [ -z "$app_name" ];then
+if [ -z "$app_name" ]; then
     echo "Empty application name" >&2
     error
     exit 1
@@ -99,7 +105,7 @@ stack new "$project_name" \
     -p author-name:Warlock \
     -p github-username:A1-Triard \
     -p category:Web \
-    -p copyriht:"$(date +%Y) Warlock" \
+    -p copyright:"$(date +%Y) Warlock" \
     || (rm -rf $tempdir ; exit 2)
 if [ -n "$github_url" ]; then
     mv $tempdir/.git "$project_name"
@@ -231,19 +237,39 @@ awk -v LP="$lib_params" -v EP="$exe_params" '
 mv -f tmp "$project_name.cabal"
 
 awk '
-    {
-        if(match($0, "^ *, ")) {
-            sub("^ *", "")
-            for(i = 0; i < colon_column - 1; ++i)
-                $0 = " " $0
-        } else {
-            sub(":  +", ": ")
-            colon_column = index($0, ":")
+    BEGIN {
+        test = 0
+    } {
+        add = 0
+        if($0 == "  main-is:             Spec.hs") {
+            test = 1
+        } else if ($0 == "  build-depends:       base") {
+            if(test)
+                add = 1
         }
         print
+        if(add)
+            print "                     , HUnit"
     }
     ' "$project_name.cabal" > tmp
 mv -f tmp "$project_name.cabal"
+
+if [ -n $format_cabal ]; then
+    awk '
+        {
+            if(match($0, "^ *, ")) {
+                sub("^ *", "")
+                for(i = 0; i < colon_column - 1; ++i)
+                    $0 = " " $0
+            } else {
+                sub(":  +", ": ")
+                colon_column = index($0, ":")
+            }
+            print
+        }
+        ' "$project_name.cabal" > tmp
+    mv -f tmp "$project_name.cabal"
+fi
 
 git add . || exit 2
 git commit -m "Empty project" || exit 2
