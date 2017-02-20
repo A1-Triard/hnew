@@ -24,7 +24,7 @@ no_dup() {
 
 github_url=''
 descr=''
-format_cabal=1
+format_cabal="yes"
 
 while getopts ":hg:d:f" opt; do
     case $opt in
@@ -33,7 +33,7 @@ while getopts ":hg:d:f" opt; do
         exit 0
         ;;
     f)
-        format_cabal=''
+        format_cabal="no"
         shift
         ;;
     g)
@@ -254,7 +254,7 @@ awk '
     ' "$project_name.cabal" > tmp
 mv -f tmp "$project_name.cabal"
 
-if [ -n $format_cabal ]; then
+if [ $format_cabal = "yes" ]; then
     awk '
         {
             if(match($0, "^ *, ")) {
