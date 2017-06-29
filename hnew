@@ -11,7 +11,7 @@ help() {
 }
 
 error() {
-    echo 'Try `hnew'"'"' --help for more information.' >&2
+    echo 'Try `hnew -h'"'"' for more information.' >&2
 }
 
 no_dup() {
