@@ -159,43 +159,43 @@ if [ -n "$descr" ]; then
 fi
 
 cat > extensions << "EOF"
-  default-extensions: CPP
-                    , TemplateHaskell
-                    , ViewPatterns
-                    , MultiParamTypeClasses
+  default-extensions: BangPatterns
+                    , CPP
+                    , DataKinds
+                    , DefaultSignatures
                     , DeriveDataTypeable
                     , DeriveGeneric
                     , DeriveFoldable
                     , DeriveTraversable
-                    , StandaloneDeriving
-                    , UnicodeSyntax
-                    , MagicHash
-                    , DefaultSignatures
-                    , NegativeLiterals
-                    , PatternSynonyms
-                    , ParallelListComp
-                    , TransformListComp
-                    , MonadComprehensions
-                    , UnboxedTuples
-                    , LambdaCase
                     , EmptyCase
                     , EmptyDataDecls
-                    , MultiWayIf
-                    , TypeOperators
-                    , TypeFamilies
-                    , KindSignatures
-                    , LiberalTypeSynonyms
                     , ExistentialQuantification
-                    , GADTs
-                    , DeriveAnyClass
+                    , ExplicitForAll
                     , FlexibleContexts
                     , FlexibleInstances
+                    , GADTs
+                    , GeneralizedNewtypeDeriving
+                    , KindSignatures
+                    , LambdaCase
+                    , LiberalTypeSynonyms
+                    , MagicHash
+                    , MonadComprehensions
+                    , MultiParamTypeClasses
+                    , MultiWayIf
+                    , NegativeLiterals
                     , OverloadedStrings
-                    , DataKinds
-                    , ExplicitForAll
-                    , BangPatterns
-                    , ScopedTypeVariables
+                    , ParallelListComp
+                    , PatternSynonyms
                     , RankNTypes
+                    , ScopedTypeVariables
+                    , StandaloneDeriving
+                    , TemplateHaskell
+                    , TransformListComp
+                    , TypeFamilies
+                    , TypeOperators
+                    , UnboxedTuples
+                    , UnicodeSyntax
+                    , ViewPatterns
 EOF
 
 cat > include_dirs << "EOF"
