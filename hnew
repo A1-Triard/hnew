@@ -132,6 +132,7 @@ cat > .gitignore << "EOF"
 *~
 *.test
 *.lkshs
+*.geany
 dist
 cabal-dev
 *.o
