@@ -16,6 +16,10 @@
 # limitations under the License.
 #
 
+author_name="Warlock"
+author_email="internalmike@gmail.com"
+author_git="A1-Triard"
+
 help() {
     echo "Usage: hnew [OPTION]... PROJECT_NAME APP_NAME"
     echo "Create new haskell project."
@@ -120,11 +124,11 @@ if [ -n "$github_url" ]; then
 fi
 
 stack new "$project_name" \
-    -p author-email:internalmike@gmail.com \
-    -p author-name:Warlock \
-    -p github-username:A1-Triard \
-    -p category:Web \
-    -p copyright:"$(date +%Y) Warlock" \
+    -p author-email:"$author_name <$author_email>" \
+    -p author-name:"$author_name <$author_email>" \
+    -p github-username:"$author_git" \
+    -p category:"Command Line Tool" \
+    -p copyright:"$(date +%Y) $author_name <$author_email>" \
     || (rm -rf $tempdir ; exit 2)
 if [ -n "$github_url" ]; then
     mv $tempdir/.git "$project_name"
