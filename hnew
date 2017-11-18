@@ -127,7 +127,7 @@ stack new "$project_name" \
     -p author-email:"$author_name <$author_email>" \
     -p author-name:"$author_name <$author_email>" \
     -p github-username:"$author_git" \
-    -p category:"Command Line Tool" \
+    -p category:"CLI" \
     -p copyright:"$(date +%Y) $author_name <$author_email>" \
     || (rm -rf $tempdir ; exit 2)
 if [ -n "$github_url" ]; then
