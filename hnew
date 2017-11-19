@@ -195,9 +195,9 @@ cp -f include/LICENSE . || exit 2
 git add LICENSE || exit 2
 
 sed -i "s/$lib_name-exe/$app_name/g" "$lib_name.cabal"
-sed -i "s/license:             BSD3/license:             Apache/" "$project_name.cabal"
-sed -i "s/extra-source-files:  README.md/-- extra-source-files:/" "$project_name.cabal"
-sed -i "s/version:             0.1.0.0/version:             0.1/" "$project_name.cabal"
+sed -i "s/license:             BSD3/license:             Apache/" "$lib_name.cabal"
+sed -i "s/extra-source-files:  README.md/-- extra-source-files:/" "$lib_name.cabal"
+sed -i "s/version:             0.1.0.0/version:             0.1/" "$lib_name.cabal"
 
 if [ -n "$github_url" ]; then
     github_project="$(dirname "$github_url")/$(basename "$github_url" .git)"
