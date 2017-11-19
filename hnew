@@ -134,7 +134,8 @@ if [ -n "$github_url" ]; then
     mv $tempdir/.git "$project_name"
 fi
 rm -rf $tempdir
-cd "$project_name"
+mv "$project_name" "$app_name" || (rm -rf "$project_name" ; exit 2)
+cd "$app_name"
 cat > .gitignore << "EOF"
 *~
 *.test
