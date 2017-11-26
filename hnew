@@ -139,7 +139,7 @@ done
 
 if [ -n "$github_url" ]; then
     gitdir=$(mktemp -d hnew.XXXXXX)
-    git clone "$github_url" $gitdir || { rm -rf $gitdir ; exit 1 }
+    git clone "$github_url" $gitdir || { rm -rf $gitdir ; exit 1; }
 fi
 
 tempdir=$(mktemp -d hnew.XXXXXX)
@@ -151,13 +151,13 @@ stack new "$lib_name" \
     -p github-username:"$author_git" \
     -p category:"CLI" \
     -p copyright:"$(date +%Y) $author_name <$author_email>" \
-    || { cd .. ; rm -rf $gitdir ; rm -rf $tempdir ; exit 1 }
+    || { cd .. ; rm -rf $gitdir ; rm -rf $tempdir ; exit 1; }
 cd ..
-mv "$tempdir/$lib_name" "$project_name" || { rm -rf $gitdir ; rm -rf $tempdir ; exit 2 }
-rmdir $tempdir || { rm -rf $gitdir ; rm -rf $tempdir ; exit 2 }
+mv "$tempdir/$lib_name" "$project_name" || { rm -rf $gitdir ; rm -rf $tempdir ; exit 2; }
+rmdir $tempdir || { rm -rf $gitdir ; rm -rf $tempdir ; exit 2; }
 
 if [ -n "$github_url" ]; then
-    mv $gitdir/.git "$project_name" || { rm -rf $gitdir ; exit 2 }
+    mv $gitdir/.git "$project_name" || { rm -rf $gitdir ; exit 2; }
     rm -rf $gitdir
 fi
 
