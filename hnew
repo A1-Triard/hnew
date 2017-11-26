@@ -139,44 +139,25 @@ done
 
 if [ -n "$github_url" ]; then
     gitdir=$(mktemp -d hnew.XXXXXX)
-    git clone "$github_url" $gitdir || (rm -rf $gitdir ; exit 1)
+    git clone "$github_url" $gitdir || { rm -rf $gitdir ; exit 1 }
 fi
 
 tempdir=$(mktemp -d hnew.XXXXXX)
 cd $tempdir
 
-if stack new "$lib_name" \
+stack new "$lib_name" \
     -p author-email:"$author_name <$author_email>" \
     -p author-name:"$author_name <$author_email>" \
     -p github-username:"$author_git" \
     -p category:"CLI" \
-    -p copyright:"$(date +%Y) $author_name <$author_email>"; then
-else
-    cd ..
-    rm -rf $gitdir
-    rm -rf $tempdir
-    exit 1
-fi
+    -p copyright:"$(date +%Y) $author_name <$author_email>" \
+    || { cd .. ; rm -rf $gitdir ; rm -rf $tempdir ; exit 1 }
 cd ..
-if mv "$tempdir/$lib_name" "$project_name"; then
-else
-    rm -rf $gitdir
-    rm -rf $tempdir
-    exit 2
-fi
-if rmdir $tempdirl; then
-else
-    rm -rf $gitdir
-    rm -rf $tempdir
-    exit 2
-fi
+mv "$tempdir/$lib_name" "$project_name" || { rm -rf $gitdir ; rm -rf $tempdir ; exit 2 }
+rmdir $tempdir || { rm -rf $gitdir ; rm -rf $tempdir ; exit 2 }
 
 if [ -n "$github_url" ]; then
-    if mv $gitdir/.git "$project_name"; then
-    else
-        rm -rf $gitdir
-        exit 2
-    fi
+    mv $gitdir/.git "$project_name" || { rm -rf $gitdir ; exit 2 }
     rm -rf $gitdir
 fi
 
