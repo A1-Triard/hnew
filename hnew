@@ -145,19 +145,38 @@ fi
 tempdir=$(mktemp -d hnew.XXXXXX)
 cd $tempdir
 
-stack new "$lib_name" \
+if stack new "$lib_name" \
     -p author-email:"$author_name <$author_email>" \
     -p author-name:"$author_name <$author_email>" \
     -p github-username:"$author_git" \
     -p category:"CLI" \
-    -p copyright:"$(date +%Y) $author_name <$author_email>" \
-    || (cd .. ; rm -rf $gitdir ; rm -rf $tempdir ; exit 1)
+    -p copyright:"$(date +%Y) $author_name <$author_email>"; then
+else
+    cd ..
+    rm -rf $gitdir
+    rm -rf $tempdir
+    exit 1
+fi
 cd ..
-mv "$tempdir/$lib_name" "$project_name" || (rm -rf $gitdir ; rm -rf $tempdir ; exit 2)
-rmdir $tempdir || (rm -rf $gitdir ; rm -rf $tempdir ; exit 2)
+if mv "$tempdir/$lib_name" "$project_name"; then
+else
+    rm -rf $gitdir
+    rm -rf $tempdir
+    exit 2
+fi
+if rmdir $tempdirl; then
+else
+    rm -rf $gitdir
+    rm -rf $tempdir
+    exit 2
+fi
 
 if [ -n "$github_url" ]; then
-    mv $gitdir/.git "$project_name" || (rm -rf $gitdir ; exit 2)
+    if mv $gitdir/.git "$project_name"; then
+    else
+        rm -rf $gitdir
+        exit 2
+    fi
     rm -rf $gitdir
 fi
 
