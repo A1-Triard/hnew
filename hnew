@@ -246,6 +246,7 @@ cat > extensions << "EOF"
                     , TypeFamilies
                     , TypeOperators
                     , UnboxedTuples
+                    , UndecidableInstances
                     , UnicodeSyntax
                     , ViewPatterns
 EOF
