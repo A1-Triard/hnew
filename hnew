@@ -218,6 +218,7 @@ cat > extensions << "EOF"
                     , DeriveDataTypeable
                     , DeriveGeneric
                     , DeriveFoldable
+                    , DeriveFunctor
                     , DeriveTraversable
                     , EmptyCase
                     , EmptyDataDecls
@@ -243,6 +244,7 @@ cat > extensions << "EOF"
                     , StandaloneDeriving
                     , TemplateHaskell
                     , TransformListComp
+                    , TupleSections
                     , TypeFamilies
                     , TypeOperators
                     , UnboxedTuples
