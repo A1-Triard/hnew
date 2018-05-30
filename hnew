@@ -27,7 +27,6 @@ help() {
     echo "  -h          display this help and exit"
     echo "  -d DESCR    description"
     echo "  -g URL.git  attach to github project"
-    echo "  -f          do NOT format cabal file"
     echo "  -p          do NOT create Geany project file"
     echo "  -l          use LIB_NAME as project name instead of APP_NAME"
 }
@@ -46,19 +45,14 @@ no_dup() {
 
 github_url=''
 descr=''
-format_cabal="yes"
 create_project="yes"
 library="no"
 
-while getopts ":hg:d:fpl" opt; do
+while getopts ":hg:d:pl" opt; do
     case $opt in
     h)
         help
         exit 0
-        ;;
-    f)
-        format_cabal="no"
-        shift
         ;;
     p)
         create_project="no"
@@ -70,9 +64,20 @@ while getopts ":hg:d:fpl" opt; do
         ;;
     g)
         no_dup "$github_url" g || exit 1
-        github_url="$OPTARG"
-        if [ -z "$github_url" ]; then
+        github_url_full="$OPTARG"
+        if [ -z "$github_url_full" ]; then
             echo "Empty URL" >&2
+            error
+            exit 1
+        fi
+        github_url="$(echo "$github_url_full" | awk '{
+            if(match($0, "^https://github\\.com/([^/]+/[^/]+).git$", s))
+                print s[1]
+            else
+                print ""
+        }')"
+        if [ -z "$github_url" ]; then
+            echo "Invalid URL" >&2
             error
             exit 1
         fi
@@ -122,7 +127,11 @@ if [ -e "$project_name" ]; then
     exit 1
 fi
 
-echo "GitHub repository: $github_url"
+if [ -n "$github_url" ]; then
+    echo "GitHub repository: https://github.com/${github_url}.git"
+else
+    echo "GitHub repository: <none>"
+fi
 echo "Project name: $project_name"
 echo "Library name: $lib_name"
 echo "Application name: $app_name"
@@ -139,18 +148,14 @@ done
 
 if [ -n "$github_url" ]; then
     gitdir=$(mktemp -d hnew.XXXXXX)
-    git clone "$github_url" $gitdir || { rm -rf $gitdir ; exit 1 ; }
+    git clone "https://github.com/${github_url}.git" $gitdir || { rm -rf $gitdir ; exit 1 ; }
 fi
 
 tempdir=$(mktemp -d hnew.XXXXXX)
 cd $tempdir
 
 stack new "$lib_name" \
-    -p author-email:"$author_name <$author_email>" \
-    -p author-name:"$author_name <$author_email>" \
-    -p github-username:"$author_git" \
-    -p category:"CLI" \
-    -p copyright:"$(date +%Y) $author_name <$author_email>" \
+    -p "author-email:xxx" -p "author-name:xxx" -p "category:xxx" -p "copyright:xxx" -p "github-username:xxx" \
     || { cd .. ; rm -rf $gitdir ; rm -rf $tempdir ; exit 1 ; }
 cd ..
 mv "$tempdir/$lib_name" "$project_name" || { rm -rf $gitdir ; rm -rf $tempdir ; exit 2 ; }
@@ -164,6 +169,7 @@ fi
 cd "$project_name"
 cat > .gitignore << "EOF"
 *~
+*.cabal
 *.test
 *.lkshs
 *.geany
@@ -194,141 +200,121 @@ git submodule add https://github.com/A1-Triard/haskell_include.git include || ex
 cp -f include/LICENSE . || exit 2
 git add LICENSE || exit 2
 
-sed -i "s/$lib_name-exe/$app_name/g" "$lib_name.cabal"
-sed -i "s/$lib_name-test/$project_name-test/g" "$lib_name.cabal"
-sed -i "s/license:             BSD3/license:             Apache/" "$lib_name.cabal"
-sed -i "s/extra-source-files:  README.md/-- extra-source-files:/" "$lib_name.cabal"
-sed -i "s/version:             0.1.0.0/version:             0.1/" "$lib_name.cabal"
+rm -f README.md
+rm -f ChangeLog.md
 
-if [ -n "$github_url" ]; then
-    github_project="$(dirname "$github_url")/$(basename "$github_url" .git)"
-    sed -i "s|https://github.com/A1-Triard/$lib_name|$github_project|g" "$lib_name.cabal"
-fi
-
+echo "name: $lib_name" > package.yaml
+echo "version: 0.1" >> package.yaml
 if [ -n "$descr" ]; then
-    sed -i "s/-- synopsis:/synopsis: $descr/" "$lib_name.cabal"
-    sed -i "s/-- description:/description: $descr/" "$lib_name.cabal"
+    echo "synopsis: $descr" >> package.yaml
+    echo "description: $descr" >> package.yaml
+else
+    echo "#synopsis:" >> package.yaml
+    echo "#description:" >> package.yaml
 fi
-
-cat > extensions << "EOF"
-  default-extensions: BangPatterns
-                    , CPP
-                    , DataKinds
-                    , DefaultSignatures
-                    , DeriveDataTypeable
-                    , DeriveGeneric
-                    , DeriveFoldable
-                    , DeriveFunctor
-                    , DeriveTraversable
-                    , EmptyCase
-                    , EmptyDataDecls
-                    , ExistentialQuantification
-                    , ExplicitForAll
-                    , FlexibleContexts
-                    , FlexibleInstances
-                    , GADTs
-                    , GeneralizedNewtypeDeriving
-                    , KindSignatures
-                    , LambdaCase
-                    , LiberalTypeSynonyms
-                    , MagicHash
-                    , MonadComprehensions
-                    , MultiParamTypeClasses
-                    , MultiWayIf
-                    , NegativeLiterals
-                    , OverloadedStrings
-                    , ParallelListComp
-                    , PatternSynonyms
-                    , RankNTypes
-                    , ScopedTypeVariables
-                    , StandaloneDeriving
-                    , TemplateHaskell
-                    , TransformListComp
-                    , TupleSections
-                    , TypeFamilies
-                    , TypeOperators
-                    , UnboxedTuples
-                    , UndecidableInstances
-                    , UnicodeSyntax
-                    , ViewPatterns
-EOF
-
-cat > include_dirs << "EOF"
-  include-dirs: include
-EOF
-
-cat > lib_options << "EOF"
-  ghc-options: -fmax-pmcheck-iterations=100000000 -O2 -Wall -Werror -fno-warn-unused-imports -fprint-potential-instances -fsimpl-tick-factor=110
-EOF
-
-cat > exe_options << "EOF"
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N -fmax-pmcheck-iterations=100000000 -O2 -Wall -Werror -fno-warn-unused-imports -fprint-potential-instances -fsimpl-tick-factor=110
-EOF
-
-cat > language << "EOF"
-  default-language: Haskell2010
-EOF
-
-lib_params=$(cat extensions include_dirs lib_options language)
-exe_params=$(cat extensions include_dirs exe_options language)
-
-rm -f extensions include_dirs lib_options exe_options language
-
-tmp=$(mktemp hnew.XXXXXX)
-awk -v LP="$lib_params" -v EP="$exe_params" '
-    BEGIN {
-        first = 1
-    } {
-        if($0 == "  default-language:    Haskell2010") {
-            if(first) {
-                first = 0
-                print LP
-            } else {
-                print EP
-            }
-        } else if($0 != "  ghc-options:         -threaded -rtsopts -with-rtsopts=-N") {
-            print
-        }
-    }
-    ' "$lib_name.cabal" > $tmp
-mv -f $tmp "$lib_name.cabal"
-
-tmp=$(mktemp hnew.XXXXXX)
-awk '
-    BEGIN {
-        test = 0
-    } {
-        add = 0
-        if($0 == "  main-is:             Spec.hs") {
-            test = 1
-        } else if ($0 == "  build-depends:       base") {
-            if(test)
-                add = 1
-        }
-        print
-        if(add)
-            print "                     , HUnit"
-    }
-    ' "$lib_name.cabal" > $tmp
-mv -f $tmp "$lib_name.cabal"
-
-if [ ".$format_cabal" = ".yes" ]; then
-    tmp=$(mktemp hnew.XXXXXX)
-    awk '
-        {
-            if(match($0, "^ *, ")) {
-                sub("^ *", "")
-                for(i = 0; i < colon_column - 1; ++i)
-                    $0 = " " $0
-            } else {
-                sub(":  +", ": ")
-                colon_column = index($0, ":")
-            }
-            print
-        }
-        ' "$lib_name.cabal" > $tmp
-    mv -f $tmp "$lib_name.cabal"
+if [ -n "$github_url" ]; then
+    echo "github: \"$github_url\"" >> package.yaml
+else
+    echo "github: \"$author_git/$project_name\"" >> package.yaml
 fi
+echo "license: Apache" >> package.yaml
+echo "author: \"$author_name <$author_email>\"" >> package.yaml
+echo "maintainer: \"$author_name <$author_email>\"" >> package.yaml
+echo "copyright: \"$(date +%Y) $author_name <$author_email>\"" >> package.yaml
+echo "category: CLI"
+cat >> package.yaml << "EOF"
+#extra-source-files:
+
+dependencies:
+- base >= 4.7 && < 5
+
+default-extensions:
+- BangPatterns
+- CPP
+- DataKinds
+- DefaultSignatures
+- DeriveDataTypeable
+- DeriveGeneric
+- DeriveFoldable
+- DeriveFunctor
+- DeriveTraversable
+- EmptyCase
+- EmptyDataDecls
+- ExistentialQuantification
+- ExplicitForAll
+- FlexibleContexts
+- FlexibleInstances
+- GADTs
+- GeneralizedNewtypeDeriving
+- KindSignatures
+- LambdaCase
+- LiberalTypeSynonyms
+- MagicHash
+- MonadComprehensions
+- MultiParamTypeClasses
+- MultiWayIf
+- NegativeLiterals
+- OverloadedStrings
+- ParallelListComp
+- PatternSynonyms
+- RankNTypes
+- ScopedTypeVariables
+- StandaloneDeriving
+- TemplateHaskell
+- TransformListComp
+- TupleSections
+- TypeFamilies
+- TypeOperators
+- UnboxedTuples
+- UndecidableInstances
+- UnicodeSyntax
+- ViewPatterns
+
+ghc-options:
+- -fmax-pmcheck-iterations=100000000
+- -O2
+- -Wall
+- -Werror
+- -fno-warn-unused-imports
+- -fprint-potential-instances
+- -fsimpl-tick-factor=110
+
+include-dirs:
+- include
+
+library:
+  source-dirs: src
+
+executables:
+EOF
+
+echo "  $app_name:" >> package.yaml
+cat >> package.yaml << "EOF"
+    main: Main.hs
+    source-dirs: app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+EOF
+
+echo "    - $lib_name" >> package.yaml
+echo "" >> package.yaml
+echo "tests:" >> package.yaml
+echo "  $project_name-test:" >> package.yaml
+cat >> package.yaml << "EOF"
+    main: Spec.hs
+    source-dirs: test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - HUnit
+EOF
+
+echo "    - $lib_name" >> package.yaml
 
 git add . || exit 2
 git commit -m "Empty project" || exit 2
