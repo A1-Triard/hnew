@@ -221,7 +221,7 @@ echo "license: Apache" >> package.yaml
 echo "author: \"$author_name <$author_email>\"" >> package.yaml
 echo "maintainer: \"$author_name <$author_email>\"" >> package.yaml
 echo "copyright: \"$(date +%Y) $author_name <$author_email>\"" >> package.yaml
-echo "category: CLI"
+echo "category: CLI" >> package.yaml
 cat >> package.yaml << "EOF"
 #extra-source-files:
 
