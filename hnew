@@ -206,8 +206,8 @@ rm -f ChangeLog.md
 echo "name: $lib_name" > package.yaml
 echo "version: 0.1" >> package.yaml
 if [ -n "$descr" ]; then
-    echo "synopsis: $descr" >> package.yaml
-    echo "description: $descr" >> package.yaml
+    echo "synopsis: \"$descr\"" >> package.yaml
+    echo "description: \"$descr\"" >> package.yaml
 else
     echo "#synopsis:" >> package.yaml
     echo "#description:" >> package.yaml
